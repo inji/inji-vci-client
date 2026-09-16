@@ -14,6 +14,10 @@ subprojects {
                 useTarget("org.bouncycastle:bcprov-jdk15to18:1.78")
                 because("Resolve version conflict between legacy titanium-json-ld and modern Tink/Nimbus libraries.")
             }
+            if (requested.group == "com.fasterxml.jackson.module" && requested.name == "jackson-module-kotlin") {
+                useVersion("2.17.3")
+                because("Keep jackson-module-kotlin on a Kotlin 1.x-compatible release.")
+            }
         }
     }
 }
