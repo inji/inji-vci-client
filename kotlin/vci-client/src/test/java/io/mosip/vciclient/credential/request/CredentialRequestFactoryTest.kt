@@ -4,6 +4,7 @@ import io.mosip.vciclient.common.JsonUtils
 import io.mosip.vciclient.constants.CredentialFormat
 import io.mosip.vciclient.issuerMetadata.IssuerMetadata
 import io.mosip.vciclient.exception.InvalidDataProvidedException
+import io.mosip.vciclient.proof.Proof
 import io.mosip.vciclient.proof.jwt.JWTProof
 import okio.Buffer
 import org.junit.Assert.assertEquals
@@ -85,6 +86,19 @@ class CredentialRequestFactoryDraft13Test {
         assertThrows(InvalidDataProvidedException::class.java) {
             CredentialRequestFactoryDraft13().createCredentialRequest(
                 CredentialFormat.LDP_VC, "access-token", ldpVcIssuerMetadata, JWTProof("")
+            )
+        }
+    }
+
+    @Test
+    fun `should reject proof that is not a jwt proof`() {
+        val ldpVpProof = object : Proof {
+            override val proofType: String = "ldp_vp"
+        }
+
+        assertThrows(InvalidDataProvidedException::class.java) {
+            CredentialRequestFactoryDraft13().createCredentialRequest(
+                CredentialFormat.LDP_VC, "access-token", ldpVcIssuerMetadata, ldpVpProof
             )
         }
     }
