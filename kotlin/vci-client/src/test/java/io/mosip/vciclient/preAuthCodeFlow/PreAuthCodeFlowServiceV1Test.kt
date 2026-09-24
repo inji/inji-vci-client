@@ -27,6 +27,11 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class PreAuthCodeFlowServiceV1Test {
+    private val proofBindingContext = ProofBindingContext(
+        proofSigningAlgorithmsSupported = listOf("ES256"),
+        cryptographicBindingMethodsSupported = listOf("did:jwk"),
+        proofTypesSupported = listOf("jwt"),
+    )
     private val resolver = mockk<AuthorizationServerResolver>()
     private val tokenService = mockk<TokenService>()
     private val executor = mockk<CredentialRequestExecutor>()
@@ -85,7 +90,7 @@ class PreAuthCodeFlowServiceV1Test {
 
         val response = service.requestCredentials(
             issuerMetadata = issuerMetadata,
-            proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
+            proofBindingContext = proofBindingContext,
             getTokenResponse = { error("unused") },
             getProofs = { proofRequest ->
                 assertEquals("https://issuer.example.com", proofRequest.credentialIssuer)
@@ -114,7 +119,7 @@ class PreAuthCodeFlowServiceV1Test {
             runBlocking {
                 service.requestCredentials(
                     issuerMetadata = issuerMetadata,
-                    proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
+                    proofBindingContext = proofBindingContext,
                     getTokenResponse = { error("unused") },
                     getProofs = { _ -> throw IllegalArgumentException("proof generation failed") },
                     credentialConfigurationId = "UniversityDegreeCredential",

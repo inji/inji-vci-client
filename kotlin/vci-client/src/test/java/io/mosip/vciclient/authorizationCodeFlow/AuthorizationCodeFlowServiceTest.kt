@@ -27,6 +27,11 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class AuthorizationCodeFlowServiceV1Test {
+    private val proofBindingContext = ProofBindingContext(
+        proofSigningAlgorithmsSupported = listOf("ES256"),
+        cryptographicBindingMethodsSupported = listOf("did:jwk"),
+        proofTypesSupported = listOf("jwt"),
+    )
     private val resolver = mockk<AuthorizationServerResolver>()
     private val tokenService = mockk<TokenService>()
     private val executor = mockk<CredentialRequestExecutor>()
@@ -110,7 +115,7 @@ class AuthorizationCodeFlowServiceV1Test {
                 },
                 authorizationMethods = authorizationMethods,
                 downloadTimeOutInMillis = 15_000,
-                proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256"))
+                proofBindingContext = proofBindingContext
             )
 
             assertEquals(expectedResponse, response)
@@ -144,7 +149,7 @@ class AuthorizationCodeFlowServiceV1Test {
                     getTokenResponse = { error("unused") },
                     getProofs = { _ -> throw IllegalStateException("proof generation failed") },
                     authorizationMethods = authorizationMethods,
-                    proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256"))
+                    proofBindingContext = proofBindingContext
                 )
             }
         }
