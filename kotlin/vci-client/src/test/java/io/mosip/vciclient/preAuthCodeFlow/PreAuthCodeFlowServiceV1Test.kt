@@ -4,6 +4,7 @@ import io.mosip.vciclient.proof.ProofBindingContext
 import com.google.gson.JsonPrimitive
 import io.mosip.vciclient.credential.response.CredentialItem
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mosip.vciclient.authorizationServer.AuthorizationServerMetadata
@@ -130,5 +131,39 @@ class PreAuthCodeFlowServiceV1Test {
 
         assertTrue(exception.message.contains("Failed to obtain proofs from callback"))
         assertEquals("proof generation failed", exception.cause?.message)
+    }
+
+    @Test
+    fun `requestCredentials should skip nonce and proofs when holder binding is not required`() = runBlocking {
+        val expectedResponse = CredentialResponse(credentials = listOf(CredentialItem(JsonPrimitive("credential-1"))))
+
+        coEvery { resolver.resolveForPreAuth(issuerMetadata, offer) } returns AuthorizationServerMetadata(
+            issuer = "https://auth.example.com",
+            tokenEndpoint = "https://auth.example.com/token"
+        )
+        coEvery { tokenService.getAccessToken(getTokenResponse = any(), tokenEndpoint = any(), preAuthCode = any(), txCode = any(), dpopManager = any()) } returns TokenResponse("access-token", "Bearer")
+        every {
+            executor.requestCredential(
+                issuerMetadata = issuerMetadata,
+                credentialConfigurationId = "UniversityDegreeCredential",
+                proofs = null,
+                accessToken = "access-token",
+                downloadTimeoutInMillis = any(),
+                tokenType = any(),
+                dpopManager = any()
+            )
+        } returns expectedResponse
+
+        val response = service.requestCredentials(
+            issuerMetadata = issuerMetadata,
+            proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
+            getTokenResponse = { error("unused") },
+            getProofs = { error("proofs callback should not be invoked") },
+            credentialConfigurationId = "UniversityDegreeCredential",
+            offer = offer
+        )
+
+        assertEquals(expectedResponse, response)
+        coVerify(exactly = 0) { nonceService.fetchNonce(any(), any(), any()) }
     }
 }
