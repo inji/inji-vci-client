@@ -1,5 +1,6 @@
 package io.mosip.vciclient.preAuthCodeFlow
 
+import io.mosip.vciclient.proof.ProofBindingContext
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -54,11 +55,12 @@ class PreAuthCodeFlowServiceTest {
             anyConstructed<AuthorizationServerResolver>().resolveForPreAuth(any(), any())
         } returns mockk {
             every { tokenEndpoint } returns "https://mock.token.endpoint"
+            every { dpopSigningAlgValuesSupported } returns null
         }
 
         every {
             anyConstructed<CredentialRequestExecutor>().requestCredentialDraft13(
-                any(), any(), any(), any(), any()
+                any(), any(), any(), any(), any(), any(), any()
             )
         } returns mockCredentialResponse
 
@@ -66,13 +68,7 @@ class PreAuthCodeFlowServiceTest {
             override suspend fun invoke(p1: String?, p2: String?, p3: Int?): String = "mockTxCode"
         }
 
-        getProofJwt = object : ProofJwtCallback {
-            override suspend fun invoke(
-                acredentialIssuer: String,
-                cNonce: String?,
-                proofSigningAlgorithmsSupported: List<String>
-            ): String = "mock.jwt.proof"
-        }
+        getProofJwt = { _ -> "mock.jwt.proof" }
 
         mockkConstructor(io.mosip.vciclient.proof.jwt.JWTProof::class)
         every { anyConstructed<io.mosip.vciclient.proof.jwt.JWTProof>().jwt } returns "mock.jwt"
@@ -93,7 +89,8 @@ class PreAuthCodeFlowServiceTest {
                 getTokenResponse = any(),
                 tokenEndpoint = any(),
                 preAuthCode = any(),
-                txCode = any()
+                txCode = any(),
+                dpopManager = any()
             )
         } returns TokenResponse(
             accessToken = "mock-access-token",
@@ -116,7 +113,7 @@ class PreAuthCodeFlowServiceTest {
 
         val result = PreAuthCodeFlowService().requestCredentialsDraft13(
             issuerMetadata = resolvedIssuerMetaData,
-            jwtProofSigningAlgorithms = listOf("ES256"),
+            proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
             getTokenResponse = mockk(relaxed = true),
             getProofJwt = getProofJwt,
             credentialConfigurationId = credentialConfigurationId,
@@ -146,7 +143,7 @@ class PreAuthCodeFlowServiceTest {
             val exception = assertThrows<DownloadFailedException> {
                 PreAuthCodeFlowService().requestCredentialsDraft13(
                     issuerMetadata = resolvedIssuerMetaData,
-                    jwtProofSigningAlgorithms = listOf("ES256"),
+                    proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
                     getTokenResponse = mockk(relaxed = true),
                     getProofJwt = getProofJwt,
                     credentialConfigurationId = credentialConfigurationId,
@@ -165,6 +162,7 @@ class PreAuthCodeFlowServiceTest {
             anyConstructed<AuthorizationServerResolver>().resolveForPreAuth(any(), any())
         } returns mockk {
             every { tokenEndpoint } returns null
+            every { dpopSigningAlgValuesSupported } returns null
         }
         val offer = CredentialOffer(
             credentialIssuer = "https://mock.issuer",
@@ -177,7 +175,7 @@ class PreAuthCodeFlowServiceTest {
         val exception = assertThrows<DownloadFailedException> {
             PreAuthCodeFlowService().requestCredentialsDraft13(
                 issuerMetadata = resolvedIssuerMetaData,
-                jwtProofSigningAlgorithms = listOf("ES256"),
+                proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
                 getTokenResponse =  mockk(relaxed = true),
                 getProofJwt = getProofJwt,
                 credentialConfigurationId = credentialConfigurationId,
@@ -203,7 +201,7 @@ class PreAuthCodeFlowServiceTest {
             runBlocking {
                 PreAuthCodeFlowService().requestCredentialsDraft13(
                     issuerMetadata = resolvedIssuerMetaData,
-                    jwtProofSigningAlgorithms = listOf("ES256"),
+                    proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
                     getTokenResponse = mockk(relaxed = true),
                     getProofJwt = getProofJwt,
                     credentialConfigurationId = credentialConfigurationId,
@@ -227,7 +225,8 @@ class PreAuthCodeFlowServiceTest {
                 getTokenResponse = any(),
                 tokenEndpoint = any(),
                 preAuthCode = any(),
-                txCode = any()
+                txCode = any(),
+                dpopManager = any()
             )
         } throws networkException
 
@@ -245,7 +244,7 @@ class PreAuthCodeFlowServiceTest {
         val ex = assertThrows<DownloadFailedException> {
             PreAuthCodeFlowService().requestCredentialsDraft13(
                 issuerMetadata = resolvedIssuerMetaData,
-                jwtProofSigningAlgorithms = listOf("ES256"),
+                proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
                 getTokenResponse = mockk(relaxed = true),
                 getProofJwt = getProofJwt,
                 credentialConfigurationId = credentialConfigurationId,

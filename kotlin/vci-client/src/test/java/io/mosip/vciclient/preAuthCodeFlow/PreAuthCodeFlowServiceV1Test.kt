@@ -1,5 +1,6 @@
 package io.mosip.vciclient.preAuthCodeFlow
 
+import io.mosip.vciclient.proof.ProofBindingContext
 import com.google.gson.JsonPrimitive
 import io.mosip.vciclient.credential.response.CredentialItem
 import io.mockk.coEvery
@@ -65,28 +66,31 @@ class PreAuthCodeFlowServiceV1Test {
                 getTokenResponse = any(),
                 tokenEndpoint = "https://auth.example.com/token",
                 preAuthCode = "pre-auth-code",
-                txCode = null
+                txCode = null,
+                dpopManager = any()
             )
         } returns TokenResponse("access-token", "Bearer")
-        coEvery { nonceService.fetchNonce(issuerMetadata, 12_000) } returns "nonce-123"
+        coEvery { nonceService.fetchNonce(issuerMetadata, 12_000, any()) } returns "nonce-123"
         every {
             executor.requestCredential(
                 issuerMetadata = issuerMetadata,
                 credentialConfigurationId = "UniversityDegreeCredential",
                 proofs = any(),
                 accessToken = "access-token",
-                downloadTimeoutInMillis = 12_000
+                downloadTimeoutInMillis = 12_000,
+                tokenType = any(),
+                dpopManager = any()
             )
         } returns expectedResponse
 
         val response = service.requestCredentials(
             issuerMetadata = issuerMetadata,
-            jwtProofSigningAlgorithms = listOf("ES256"),
+            proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
             getTokenResponse = { error("unused") },
-            getProofs = { issuer, nonce, algorithms ->
-                assertEquals("https://issuer.example.com", issuer)
-                assertEquals("nonce-123", nonce)
-                assertEquals(listOf("ES256"), algorithms)
+            getProofs = { proofRequest ->
+                assertEquals("https://issuer.example.com", proofRequest.credentialIssuer)
+                assertEquals("nonce-123", proofRequest.nonce)
+                assertEquals(listOf("ES256"), proofRequest.proofSigningAlgorithmsSupported)
                 CredentialRequestProofs(proofs = listOf("proof-1"))
             },
             credentialConfigurationId = "UniversityDegreeCredential",
@@ -103,16 +107,16 @@ class PreAuthCodeFlowServiceV1Test {
             issuer = "https://auth.example.com",
             tokenEndpoint = "https://auth.example.com/token"
         )
-        coEvery { tokenService.getAccessToken(any(), any(), any(), any()) } returns TokenResponse("access-token", "Bearer")
-        coEvery { nonceService.fetchNonce(issuerMetadata, any()) } returns "nonce-123"
+        coEvery { tokenService.getAccessToken(getTokenResponse = any(), tokenEndpoint = any(), preAuthCode = any(), txCode = any(), dpopManager = any()) } returns TokenResponse("access-token", "Bearer")
+        coEvery { nonceService.fetchNonce(issuerMetadata, any(), any()) } returns "nonce-123"
 
         val exception = assertThrows(DownloadFailedException::class.java) {
             runBlocking {
                 service.requestCredentials(
                     issuerMetadata = issuerMetadata,
-                    jwtProofSigningAlgorithms = listOf("ES256"),
+                    proofBindingContext = ProofBindingContext(proofSigningAlgorithmsSupported = listOf("ES256")),
                     getTokenResponse = { error("unused") },
-                    getProofs = { _, _, _ -> throw IllegalArgumentException("proof generation failed") },
+                    getProofs = { _ -> throw IllegalArgumentException("proof generation failed") },
                     credentialConfigurationId = "UniversityDegreeCredential",
                     offer = offer
                 )

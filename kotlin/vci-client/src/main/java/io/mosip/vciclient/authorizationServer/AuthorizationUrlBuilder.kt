@@ -5,7 +5,7 @@ import io.mosip.vciclient.constants.AuthorizationResponseType
 import java.net.URLEncoder
 
 object AuthorizationUrlBuilder {
-    fun build(
+    fun buildAuthorizationRequestUrl(
         baseUrl: String,
         clientId: String,
         redirectUri: String,
@@ -14,7 +14,8 @@ object AuthorizationUrlBuilder {
         state: String,
         codeChallenge: String,
         codeChallengeMethod: CodeChallengeMethod = CodeChallengeMethod.S256,
-        nonce: String
+        nonce: String,
+        dpopJkt: String,
     ): String {
         return buildString {
             append(baseUrl)
@@ -26,6 +27,19 @@ object AuthorizationUrlBuilder {
             append("&code_challenge=").append(encode(codeChallenge))
             append("&code_challenge_method=").append(encode(codeChallengeMethod.value))
             append("&nonce=").append(encode(nonce))
+            append("&dpop_jkt=").append(encode(dpopJkt))
+        }
+    }
+
+    fun buildAuthorizationRequestUrlWithRequestUri(
+        baseUrl: String,
+        clientId: String,
+        requestUri: String,
+    ): String {
+        return buildString {
+            append(baseUrl)
+            append("?client_id=").append(encode(clientId))
+            append("&request_uri=").append(encode(requestUri))
         }
     }
 

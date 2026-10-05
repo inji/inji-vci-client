@@ -56,16 +56,16 @@ The implementation follows:
 
 - Request credentials from OID4VCI-compliant credential issuers
 - Supports both:
-    - Issuer Initiated Flow (Credential Offer Flow).
-    - Wallet Initiated Flow (Trusted Issuer Flow).
+  - Issuer Initiated Flow (Credential Offer Flow).
+  - Wallet Initiated Flow (Trusted Issuer Flow).
 - Authorization server discovery for both flows
 - PKCE-compliant OAuth 2.0 Authorization Code flow (RFC 7636)
-    - PKCE session is managed internally by the library
+  - PKCE session is managed internally by the library
 - Well-defined **exception handling** with `VCI-XXX` error codes (see more on [this](#-error-handling))
 - Support for multiple Credential formats:
-    - `ldp_vc`
-    - `mso_mdoc`
-    - `vc+sd-jwt` / `dc+sd-jwt`
+  - `ldp_vc`
+  - `mso_mdoc`
+  - `vc+sd-jwt` / `dc+sd-jwt`
 
 [//]: # (The reference for PDI  is intentionally pointing to kotlin library master branch to be release agnostic, as the PDI support is available for both kotlin and kotlin libraries. The documentation for PDI support is also common for both libraries, hence it is placed in the common doc folder in the root of the repository.)
 - Presentation During Issuance (PDI) support for both download flows (For more details on PDI support, please refer to the [Presentation During Issuance documentation](https://github.com/inji/inji-vci-client/tree/master/docs/presentation-during-issuance-support.md))
@@ -553,6 +553,9 @@ try {
 | VCI-009 | `IssuerMetadataFetchException`          | Failed to fetch issuerMetadata                                                                           |
 | VCI-010 | `VCIClientException`                    | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                 |
 | VCI-011 | `InteractiveAuthorizationException`     | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
+| VCI-012 | `IllegalArgumentException`              | An illegal argument was provided                                                                         |
+| VCI-013 | `DPoPException`                         | Failed to generate or apply DPoP proof (RFC 9449)                                                        |
+| VCI-014 | `PushedAuthorizationRequestException`   | Failed to push authorization request (RFC 9126)                                                          |
 
 ---
 
