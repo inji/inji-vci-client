@@ -178,6 +178,34 @@ class DPoPManagerTest {
     }
 
     @Test
+    fun `credential proof htu preserves percent-encoded path segments`() {
+        val endpoints = mapOf(
+            "https://issuer.example.com/tenant%2Falpha/credential" to "https://issuer.example.com/tenant%2Falpha/credential",
+            "https://issuer.example.com/a%2fb/credential" to "https://issuer.example.com/a%2fb/credential",
+            "https://issuer.example.com/caf%C3%A9/credential" to "https://issuer.example.com/caf%C3%A9/credential",
+            "https://issuer.example.com/v1/cred%20endpoint?x=1#f" to "https://issuer.example.com/v1/cred%20endpoint",
+            "https://Issuer.Example.com:443/tenant%2Falpha/credential" to "https://issuer.example.com/tenant%2Falpha/credential",
+            "https://issuer.example.com:8443/tenant%2Falpha/credential" to "https://issuer.example.com:8443/tenant%2Falpha/credential",
+        )
+        endpoints.forEach { (endpoint, expectedHtu) ->
+            val proof = initializedManager().generateCredentialProof(
+                credentialEndpoint = endpoint,
+                accessToken = "an-access-token"
+            )
+            assertEquals(endpoint, expectedHtu, SignedJWT.parse(proof).jwtClaimsSet.getStringClaim("htu"))
+        }
+    }
+
+    @Test
+    fun `htu defaults to root path when endpoint has no path`() {
+        val proof = initializedManager().generateCredentialProof(
+            credentialEndpoint = "https://issuer.example.com",
+            accessToken = "an-access-token"
+        )
+        assertEquals("https://issuer.example.com/", SignedJWT.parse(proof).jwtClaimsSet.getStringClaim("htu"))
+    }
+
+    @Test
     fun `thumbprint matches the embedded public jwk thumbprint`() {
         val manager = initializedManager()
         val proof = SignedJWT.parse(manager.generateTokenProof())
