@@ -153,6 +153,11 @@ class DPoPManager {
             scheme == "http" && uri.port == 80 -> -1
             else -> uri.port
         }
-        return URI(scheme, null, host, port, uri.path.ifEmpty { "/" }, null, null).toString()
+        if (host == null) {
+            return URI(scheme, null, null, port, uri.path.ifEmpty { "/" }, null, null).toString()
+        }
+        val rawPath = uri.rawPath?.ifEmpty { "/" } ?: "/"
+        val portSuffix = if (port == -1) "" else ":$port"
+        return "$scheme://$host$portSuffix$rawPath"
     }
 }
